@@ -1,8 +1,13 @@
+#!/usr/bin/env python3
 import subprocess
 import sys
 import os
 
-# 1. Persona definition
+# Paths to whisper.cpp binary and model
+WHISPER_MAIN = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/build/bin/main"
+MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/models/ggml-base.en.bin"
+
+# Persona definition
 PERSONA = """
 You are a thoughtful and supportive academic supervisor with expertise in artificial intelligence, creative technology, and technical implementation.
 You listen carefully to recorded supervision meetings between a student and their supervisors, who focus on critical design and pedagogy.
@@ -13,8 +18,8 @@ You aim to encourage productive dialogue, support the student’s growth, and re
 def transcribe(audio_file):
     print(f"Transcribing {audio_file}...")
     subprocess.run([
-        "./main",
-        "-m", "models/ggml-base.en.bin",
+        WHISPER_MAIN,
+        "-m", MODEL_PATH,
         "-f", audio_file,
         "-otxt"
     ], check=True)
