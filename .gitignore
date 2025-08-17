@@ -1,2 +1,3 @@
 .DS_Store
 /whisper.cpp
+__pycache__/

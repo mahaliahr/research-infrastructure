@@ -4,6 +4,11 @@ import tempfile
 import subprocess
 import ollama
 import os
+import logger
+
+# Start session
+text_log, json_log = logger.init_session()
+
 
 # Persona definition
 PERSONA = """
@@ -17,6 +22,10 @@ You aim to encourage productive dialogue, support the student’s growth, and re
 SAMPLE_RATE = 16000  # matches Whisper's default
 CHANNELS = 1
 DURATION = 15  # seconds per recording snippet
+
+# Paths to whisper.cpp binary and model
+WHISPER_CLI = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/build/bin/whisper-cli"
+MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/models/ggml-base.en.bin"
 
 def record_audio():
     print(f"🎙 Recording for {DURATION} seconds...")
@@ -33,8 +42,8 @@ def save_temp_wav(audio):
 def transcribe(audio_path):
     print("📝 Transcribing with Whisper.cpp...")
     subprocess.run([
-        "./main",  # path to whisper.cpp executable
-        "-m", "models/ggml-base.en.bin",
+        WHISPER_CLI,  
+        "-m", MODEL_PATH,
         "-f", audio_path,
         "-otxt"
     ], check=True)
@@ -72,5 +81,11 @@ if __name__ == "__main__":
             print("\n" + "-"*50 + "\n")
             os.remove(wav_path)  # clean up temp files
             os.remove(wav_path + ".txt")
+            person_text = transcript
+            logger.log_text(text_log, "person", person_text)
+            logger.log_json(json_log, "person_speech", {"text": person_text})
+            bot_reply = feedback
+            logger.log_text(text_log, "bot", bot_reply)
+            logger.log_json(json_log, "bot_interjection", {"reply": bot_reply})
     except KeyboardInterrupt:
         print("\nSession ended.")
