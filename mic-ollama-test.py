@@ -27,6 +27,9 @@ DURATION = 15  # seconds per recording snippet
 WHISPER_CLI = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/build/bin/whisper-cli"
 MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/models/ggml-base.en.bin"
 
+# def speak_mac(feedback):
+#     subprocess.run(["say", feedback])
+
 def record_audio():
     print(f"🎙 Recording for {DURATION} seconds...")
     audio = sd.rec(int(DURATION * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=CHANNELS, dtype='float32')
@@ -78,6 +81,7 @@ if __name__ == "__main__":
             feedback = query_ollama(transcript)
             print("\n🤖 AI Supervisor Feedback:\n")
             print(feedback)
+            # speak_mac(feedback)
             print("\n" + "-"*50 + "\n")
             os.remove(wav_path)  # clean up temp files
             os.remove(wav_path + ".txt")
