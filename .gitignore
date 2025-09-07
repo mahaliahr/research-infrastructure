@@ -1,4 +1,5 @@
 .DS_Store
 /whisper.cpp
 /logs
+/context
 __pycache__/
