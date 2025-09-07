@@ -12,7 +12,10 @@ text_log, json_log = logger.init_session()
 # Audio recording settings
 SAMPLE_RATE = 16000  # matches Whisper's default
 CHANNELS = 1
-DURATION = 15  # seconds per recording snippet
+DURATION = 5  # seconds per recording snippet
+
+BUFFER_SIZE = 3  # how many snippets before the bot replies
+buffer = []
 
 # Paths to whisper.cpp binary and model
 WHISPER_CLI = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/build/bin/whisper-cli"
@@ -51,7 +54,7 @@ def save_temp_wav(audio):
 
 def transcribe(audio_path):
     print("📝 Transcribing with Whisper.cpp...")
-    with open("whisper_timings.log", "a") as logf, open("whisper_debug.log", "a") as debugf:
+    with open("logs/whisper_timings.log", "a") as logf, open("logs/whisper_debug.log", "a") as debugf:
         try:
             subprocess.run(
                 [
@@ -81,11 +84,11 @@ Here is important background context about the student's PhD:
 Here is the most recent part of the conversation:
 {transcript}
 
-Now, respond as if you were in the room as a fellow supervisor.
-- Be concise and natural, no longer than 3–4 sentences.
-- Do not summarize; instead, respond directly to the content of the conversation.
-- Engage in a reflective and supportive way, adding insight from your technical/AI expertise when useful.
-- Your tone should be collegial and conversational, not formal or evaluative.
+Now, respond as if you just heard this in a live conversation.  
+- Keep your reply short (1–2 sentences).  
+- React directly to what was said rather than summarising.  
+- Speak in a natural, human way (it’s okay to sound tentative or reflective).  
+- Avoid lists or overly formal language.  
 """
 
     conv_response = ollama.chat(OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}])
@@ -120,21 +123,32 @@ if __name__ == "__main__":
             wav_path = save_temp_wav(audio)
             transcript = transcribe(wav_path)
             print(f"\n🗣 Transcript:\n{transcript}")
-            feedback = query_ollama(transcript)
-            print("\n🤖 AI Supervisor Feedback:\n")
-            print(feedback)
+
+            # Add transcript to buffer
+            buffer.append(transcript)
+
+            if len(buffer) >= BUFFER_SIZE:
+                joined_context = " ".join(buffer)
+                feedback = query_ollama(joined_context)
+                print("\n🤖 AI Supervisor Feedback:\n")
+                print(feedback)
+                # speak_mac(feedback)
+
+                # person_text = transcript
+                # bot_reply = feedback
+                # logger.log_text(text_log, "person", person_text)
+                # logger.log_json(json_log, "person_speech", {"text": person_text})
+                # logger.log_text(text_log, "bot", bot_reply)
+                # logger.log_json(json_log, "bot_interjection", {"reply": bot_reply})
+
+                # Clear buffer after response
+                buffer = []
+
             print("\n" + "-"*50 + "\n")
 
             # Clean up
             os.remove(wav_path)
             os.remove(wav_path + ".txt")
 
-            # Example logging (disabled in your snippet but left here for clarity)
-            person_text = transcript
-            bot_reply = feedback
-            # logger.log_text(text_log, "person", person_text)
-            # logger.log_json(json_log, "person_speech", {"text": person_text})
-            # logger.log_text(text_log, "bot", bot_reply)
-            # logger.log_json(json_log, "bot_interjection", {"reply": bot_reply})
     except KeyboardInterrupt:
         print("\nSession ended.")

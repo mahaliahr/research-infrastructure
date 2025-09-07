@@ -2,4 +2,5 @@
 /whisper.cpp
 /logs
 /context
+/audio-test-files
 __pycache__/
