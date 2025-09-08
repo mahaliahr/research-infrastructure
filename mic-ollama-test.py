@@ -5,6 +5,10 @@ import subprocess
 import ollama
 import os
 import logger
+import threading
+import itertools
+import time
+import sys
 
 # Start session
 text_log, json_log = logger.init_session()
@@ -25,8 +29,8 @@ MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-Universityofth
 # OLLAMA_MODEL = "zephyr:7b"
 OLLAMA_MODEL = "llama3:8b"
 
-def speak_mac(feedback):
-    subprocess.run(["say", feedback])
+# def speak_mac(feedback):
+#     subprocess.run(["say", feedback])
 
 # Load background PhD context from external file
 CONTEXT_FILE = "context/phd-context.txt"
@@ -78,8 +82,20 @@ def transcribe(audio_path):
     transcript_file = f"{audio_path}.txt"
     with open(transcript_file, "r") as f:
         return f.read()
+    
+def spinner(msg, stop_event):
+    for char in itertools.cycle('|/-\\'):
+        if stop_event.is_set():
+            break
+        sys.stdout.write(f'\r{msg} {char}')
+        sys.stdout.flush()
+        time.sleep(0.1)
+    sys.stdout.write('\r' + ' ' * (len(msg)+2) + '\r')
 
-def query_ollama(transcript):
+# def query_ollama(transcript):
+#     prompt = f"""{PERSONA}
+
+def query_ollama_stream(transcript):
     prompt = f"""{PERSONA}
 
 Here is important background context about the student's PhD:
@@ -95,8 +111,8 @@ Now, respond as if you just heard this in a live conversation.
 - Avoid lists or overly formal language.  
 """
 
-    conv_response = ollama.chat(OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}])
-    conv_text = conv_response["message"]["content"]
+    # conv_response = ollama.chat(OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}])
+    # conv_text = conv_response["message"]["content"]
 
     # Structured summary (silent log only)
     log_prompt = f"""{PERSONA}
@@ -110,6 +126,34 @@ Please produce a structured log entry:
 3. Possible next steps
 """
 
+    # Start spinner in case there's a delay before streaming begins
+    stop_event = threading.Event()
+    t = threading.Thread(target=spinner, args=("🤖 Supervisor-Bot is thinking...", stop_event))
+    t.start()
+
+    stream = ollama.chat(
+        model=OLLAMA_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        stream=True
+    )
+    got_first_token = False
+        
+    conv_text = ""
+    print("\n🤖 Supervisor-Bot is speaking:\n")
+
+    for chunk in stream:
+            if "message" in chunk and "content" in chunk["message"]:
+                if not got_first_token:
+                    # stop spinner once first token arrives
+                    stop_event.set()
+                    t.join()
+                    got_first_token = True
+                token = chunk["message"]["content"]
+                conv_text += token
+                print(token, end="", flush=True)
+
+    print("\n")  # newline after response completes
+
     log_response = ollama.chat(OLLAMA_MODEL, messages=[{"role": "user", "content": log_prompt}])
     log_text = log_response["message"]["content"]
 
@@ -117,6 +161,8 @@ Please produce a structured log entry:
     logger.log_json(json_log, "structured_summary", {"summary": log_text})
     logger.log_text(text_log, "structured_summary", log_text)
 
+    stop_event.set()
+    t.join()
     return conv_text
 
 if __name__ == "__main__":
@@ -133,10 +179,10 @@ if __name__ == "__main__":
 
             if len(buffer) >= BUFFER_SIZE:
                 joined_context = " ".join(buffer)
-                feedback = query_ollama(joined_context)
-                print("\n🤖 AI Supervisor Feedback:\n")
-                print(feedback)
-                speak_mac(feedback)
+                feedback = query_ollama_stream(joined_context)
+                # print("\n🤖 AI Supervisor Feedback:\n")
+                # print(feedback)
+                # speak_mac(feedback)
 
                 # person_text = transcript
                 # bot_reply = feedback
