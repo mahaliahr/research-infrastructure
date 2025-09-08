@@ -14,7 +14,7 @@ SAMPLE_RATE = 16000  # matches Whisper's default
 CHANNELS = 1
 DURATION = 5  # seconds per recording snippet
 
-BUFFER_SIZE = 3  # how many snippets before the bot replies
+BUFFER_SIZE = 4  # how many snippets before the bot replies
 buffer = []
 
 # Paths to whisper.cpp binary and model
@@ -22,7 +22,11 @@ WHISPER_CLI = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-Universityoft
 MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-UniversityoftheArtsLondon/PhD Onedrive/Supervisor-Bot/whisper.cpp/models/ggml-base.en.bin"
 
 # model
-OLLAMA_MODEL = "zephyr:7b"
+# OLLAMA_MODEL = "zephyr:7b"
+OLLAMA_MODEL = "llama3:8b"
+
+def speak_mac(feedback):
+    subprocess.run(["say", feedback])
 
 # Load background PhD context from external file
 CONTEXT_FILE = "context/phd-context.txt"
@@ -132,7 +136,7 @@ if __name__ == "__main__":
                 feedback = query_ollama(joined_context)
                 print("\n🤖 AI Supervisor Feedback:\n")
                 print(feedback)
-                # speak_mac(feedback)
+                speak_mac(feedback)
 
                 # person_text = transcript
                 # bot_reply = feedback
