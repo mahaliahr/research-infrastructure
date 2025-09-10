@@ -3,4 +3,5 @@
 /logs
 /context
 /audio-test-files
+/script-test-files
 __pycache__/

@@ -13,6 +13,7 @@ import sys
 # Start session
 text_log, json_log = logger.init_session()
 
+# ////////// Temporary save output//////
 class Tee:
     def __init__(self, *files):
         self.files = files
@@ -29,6 +30,7 @@ session_log = open("logs/session_output.log", "a")
 sys.stdout = Tee(sys.stdout, session_log)
 sys.stderr = Tee(sys.stderr, session_log)
 
+# ///////////////////////////////////////
 
 # Audio recording settings
 SAMPLE_RATE = 16000  # matches Whisper's default
@@ -46,8 +48,8 @@ MODEL_PATH = "/Users/mhenryrichards/Library/CloudStorage/OneDrive-Universityofth
 OLLAMA_MODEL = "zephyr:7b"
 # OLLAMA_MODEL = "llama3:8b"
 
-# def speak_mac(feedback):
-#     subprocess.run(["say", feedback])
+def speak_mac(feedback):
+    subprocess.run(["say", feedback])
 
 # Load background PhD context from external file
 CONTEXT_FILE = "context/phd-context.txt"
@@ -99,7 +101,8 @@ def transcribe(audio_path):
     transcript_file = f"{audio_path}.txt"
     with open(transcript_file, "r") as f:
         return f.read()
-    
+
+# Alternative prompt feedback log for reference  
 def log_summary_async(transcript):
     def _worker():
         log_prompt = f"""{PERSONA}
@@ -126,9 +129,6 @@ def spinner(msg, stop_event):
         sys.stdout.flush()
         time.sleep(0.1)
     sys.stdout.write('\r' + ' ' * (len(msg)+2) + '\r')
-
-# def query_ollama(transcript):
-#     prompt = f"""{PERSONA}
 
 def query_ollama_stream(transcript):
     prompt = f"""{PERSONA}
@@ -196,16 +196,7 @@ if __name__ == "__main__":
             if len(buffer) >= BUFFER_SIZE:
                 joined_context = " ".join(buffer)
                 feedback = query_ollama_stream(joined_context)
-                # print("\n🤖 AI Supervisor Feedback:\n")
-                # print(feedback)
                 # speak_mac(feedback)
-
-                # person_text = transcript
-                # bot_reply = feedback
-                # logger.log_text(text_log, "person", person_text)
-                # logger.log_json(json_log, "person_speech", {"text": person_text})
-                # logger.log_text(text_log, "bot", bot_reply)
-                # logger.log_json(json_log, "bot_interjection", {"reply": bot_reply})
 
                 # Clear buffer after response
                 buffer = []
