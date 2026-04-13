@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervisor-Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300..700&display=swap" rel="stylesheet"" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #fafaf8;
+    --text:     #1a1a1a;
+    --dim:      #999;
+    --faint:    #ccc;
+    --border:   #ddddd8;
+    --accent:   #6b5ce7;
+    --mono: 'Overpass Mono', 'Courier New', monospace;
+    --body: 'Overpass Mono', 'Courier New', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 560px;
+    padding: 32px 24px 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .wordmark {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .wordmark em {
+    font-style: normal;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  /* ── Begin button ── */
+  .btn-begin {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border: 2px solid var(--text);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+  }
+  .btn-begin:hover:not(:disabled) {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .btn-begin.active {
+    border-color: var(--faint);
+    color: var(--dim);
+  }
+  .btn-begin:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-stop {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .btn-stop:hover:not(:disabled) { color: var(--text); border-color: var(--dim); }
+  .btn-stop:disabled { opacity: 0.2; cursor: not-allowed; }
+
+  /* ── Feed ── */
+  .feed {
+    width: 100%;
+    max-width: 560px;
+    padding: 28px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Listening state ── */
+  .listening {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    padding: 14px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+  }
+  .listening-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* ── Transcript block ── */
+  .transcript {
+    border: 1.5px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 16px;
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--text);
+    margin: 8px 0;
+    animation: fadeIn 0.25s ease;
+    line-height: 1.55;
+  }
+
+  /* ── Bot bubble ── */
+  /* Speech bubble pointing bottom-left, matching sketch */
+  .bot-bubble-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 12px 0 4px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .bot-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    padding-left: 2px;
+  }
+
+  .bot-bubble {
+    position: relative;
+    background: #f0eeff;
+    border: 1.5px solid var(--accent);
+    border-radius: 16px 16px 16px 4px;
+    padding: 12px 18px;
+    font-family: var(--body);
+    font-style: italic;
+    font-size: 15px;
+    color: #3d3080;
+    max-width: 90%;
+    line-height: 1.55;
+  }
+
+  /* cursor while streaming */
+  .bot-bubble.streaming::after {
+    content: '|';
+    color: var(--accent);
+    animation: blink 0.9s step-end infinite;
+    font-style: normal;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Thinking state ── */
+  .thinking {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    padding: 10px 0 6px;
+    animation: fadeIn 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Divider between sessions ── */
+  .session-marker {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 20px 0 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  /* ── Empty / idle state ── */
+  .idle-hint {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--faint);
+    padding: 32px 0 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Controls row ── */
+  .controls {
+    width: 100%;
+    max-width: 560px;
+    padding: 16px 24px 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="wordmark">Supervisor-Bot <em>·</em> <em>v1.5</em></div>
+  <button class="btn-begin" id="btn-begin" onclick="startSession()">Begin</button>
+</header>
+ 
+<div class="controls">
+  <button class="btn-stop" id="btn-stop" onclick="stopSession()" disabled>Stop session</button>
+</div>
+ 
+<!-- Always-visible state banner -->
+<div class="state-banner" id="state-banner">
+  <div class="state-inner">
+    <div class="state-dot" id="state-dot"></div>
+    <div class="state-label" id="state-label">Starting…</div>
+    <div class="state-sub" id="state-sub"></div>
+  </div>
+  <div class="buffer-track" id="buffer-track"></div>
+</div>
+ 
+<div class="feed" id="feed">
+  <div class="idle-hint">Press Begin to start recording.</div>
+</div>
+ 
+<script>
+  let sse = null;
+  let botBubble = null;
+  let bufCount = 0;
+  const BUF_MAX = 4;
+ 
+  const feed        = document.getElementById('feed');
+  const btnBegin    = document.getElementById('btn-begin');
+  const btnStop     = document.getElementById('btn-stop');
+  const banner      = document.getElementById('state-banner');
+  const stateDot    = document.getElementById('state-dot');
+  const stateLabel  = document.getElementById('state-label');
+  const stateSub    = document.getElementById('state-sub');
+  const bufferTrack = document.getElementById('buffer-track');
+ 
+  // ── State banner ─────────────────────────────────────────────────────────────
+ 
+  function setState(mode, label, sub) {
+    banner.classList.add('visible');
+    stateDot.className = `state-dot ${mode}`;
+    stateLabel.textContent = label;
+    stateSub.textContent = sub || '';
+  }
+ 
+  function hideBanner() {
+    banner.classList.remove('visible');
+  }
+ 
+  function renderBuffer() {
+    bufferTrack.innerHTML = '';
+    for (let i = 0; i < BUF_MAX; i++) {
+      const pip = document.createElement('div');
+      pip.className = 'buffer-pip' + (i < bufCount ? ' filled' : '');
+      bufferTrack.appendChild(pip);
+    }
+  }
+ 
+  // ── Feed helpers ─────────────────────────────────────────────────────────────
+ 
+  function clearIdle() {
+    const hint = feed.querySelector('.idle-hint');
+    if (hint) hint.remove();
+  }
+ 
+  function scrollDown() {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+ 
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+ 
+  function addTranscript(text) {
+    const el = document.createElement('div');
+    el.className = 'transcript';
+    el.textContent = text;
+    feed.appendChild(el);
+    scrollDown();
+  }
+ 
+  function startBotBubble() {
+    const wrap = document.createElement('div');
+    wrap.className = 'bot-bubble-wrap';
+    const label = document.createElement('div');
+    label.className = 'bot-label';
+    label.textContent = 'supervisor-bot';
+    const bubble = document.createElement('div');
+    bubble.className = 'bot-bubble streaming';
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    feed.appendChild(wrap);
+    botBubble = bubble;
+    scrollDown();
+  }
+ 
+  function appendBotToken(token) {
+    if (botBubble) {
+      botBubble.textContent += token;
+      scrollDown();
+    }
+  }
+ 
+  function finishBotBubble() {
+    if (botBubble) {
+      botBubble.classList.remove('streaming');
+      botBubble = null;
+    }
+  }
+ 
+  function setActive(val) {
+    btnBegin.disabled = val;
+    btnStop.disabled  = !val;
+  }
+ 
+  // ── SSE ──────────────────────────────────────────────────────────────────────
+ 
+  function connectSSE() {
+    if (sse) sse.close();
+    sse = new EventSource('/stream');
+    sse.onmessage = e => handle(JSON.parse(e.data));
+  }
+ 
+  function handle(ev) {
+    switch (ev.event) {
+ 
+      case 'session_start':
+        clearIdle();
+        const marker = document.createElement('div');
+        marker.className = 'session-marker';
+        marker.textContent = 'session started';
+        feed.appendChild(marker);
+        bufCount = 0;
+        renderBuffer();
+        setState('recording', 'Recording…', `snippet 1 of ${BUF_MAX}`);
+        setActive(true);
+        break;
+ 
+      case 'session_end':
+        finishBotBubble();
+        const endMarker = document.createElement('div');
+        endMarker.className = 'session-marker';
+        endMarker.textContent = 'session ended';
+        feed.appendChild(endMarker);
+        hideBanner();
+        setActive(false);
+        break;
+ 
+      case 'status':
+        // Map server status messages to banner states
+        const msg = (ev.message || '').toLowerCase();
+        if (msg.includes('recording')) {
+          // Extract snippet number if present
+          const match = ev.message.match(/(\d+)\/(\d+)/);
+          const sub = match ? `snippet ${match[1]} of ${match[2]}` : '';
+          setState('recording', 'Recording…', sub);
+        } else if (msg.includes('transcrib')) {
+          setState('transcribing', 'Transcribing snippet…', 'whisper.cpp');
+        } else if (msg.includes('deciding')) {
+          setState('thinking', 'Thinking about whether to respond…', 'ollama');
+        } else if (msg.includes('thinking') || msg.includes('bot')) {
+          setState('thinking', 'Supervisor-Bot is thinking…', 'ollama');
+        } else if (msg.includes('chose not')) {
+          setState('recording', 'Listening…', 'continuing');
+        }
+        break;
+ 
+      case 'transcript':
+        bufCount = Math.min(bufCount + 1, BUF_MAX);
+        renderBuffer();
+        addTranscript(ev.text);
+        // Show recording state again while buffering
+        if (bufCount < BUF_MAX) {
+          setState('recording', 'Recording…', `snippet ${bufCount + 1} of ${BUF_MAX}`);
+        }
+        break;
+ 
+      case 'bot_start':
+        setState('thinking', 'Supervisor-Bot is responding…', 'ollama');
+        setTimeout(startBotBubble, 300);
+        break;
+ 
+      case 'bot_token':
+        appendBotToken(ev.token);
+        break;
+ 
+      case 'bot_end':
+        finishBotBubble();
+        bufCount = 0;
+        renderBuffer();
+        setState('recording', 'Recording…', `snippet 1 of ${BUF_MAX}`);
+        break;
+ 
+      case 'error':
+        setState('idle', ev.message || 'An error occurred.', '');
+        break;
+    }
+  }
+ 
+  // ── Session control ──────────────────────────────────────────────────────────
+ 
+  async function startSession() {
+    try {
+      const r = await fetch('/session/start', { method: 'POST' });
+      if (!r.ok) { alert((await r.json()).detail); return; }
+      feed.innerHTML = '';
+      setState('idle', 'Starting session…', '');
+      connectSSE();
+    } catch(e) {
+      alert('Could not reach server: ' + e.message);
+    }
+  }
+ 
+  async function stopSession() {
+    await fetch('/session/stop', { method: 'POST' }).catch(() => {});
+  }
+ 
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      const r = await fetch('/session/status');
+      const j = await r.json();
+      if (j.active) { setActive(true); connectSSE(); }
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>
