@@ -85,7 +85,7 @@ class SessionState:
         while not self._stop_event.is_set():
             # Record
             self._emit("status", {"message": f"Recording snippet {len(snippet_buffer)+1}/{BUFFER_SIZE}…"})
-            audio    = pipeline.record_audio()
+            audio, amplitude = pipeline.record_audio()
             wav_path = pipeline.save_temp_wav(audio)
 
             # Transcribe

@@ -1,17 +1,17 @@
 import os
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
-SAMPLE_RATE  = 16000   # Hz  (Whisper default)
-CHANNELS     = 1
-DURATION     = 5       # seconds per snippet
-BUFFER_SIZE  = 4       # snippets before bot responds
+SAMPLE_RATE       = 16000   # Hz  (Whisper default)
+CHANNELS          = 1
+DURATION          = 5       # seconds per snippet
+BUFFER_SIZE       = 3      # snippets before bot responds
+SILENCE_THRESHOLD = 0.02    # max amplitude below which audio is treated as silence
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 # Override these via environment variables or edit directly.
 WHISPER_CLI = os.environ.get(
     "WHISPER_CLI",
     "/Users/mhenryrichards/Documents/GitHub/supervisor-bot/whisper.cpp/build/bin/whisper-cli"
-    
 )
 MODEL_PATH = os.environ.get(
     "WHISPER_MODEL",
@@ -19,7 +19,7 @@ MODEL_PATH = os.environ.get(
 )
 
 # ── LLM ────────────────────────────────────────────────────────────────────────
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3:8b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:e4b")  # update as I test /change models
 
 # ── Context ────────────────────────────────────────────────────────────────────
 CONTEXT_FILE = "context/phd-context.txt"
@@ -29,6 +29,7 @@ LOG_DIR = "logs"
 
 # ── Persona ────────────────────────────────────────────────────────────────────
 PERSONA = """
+You are an overhearer, not a primary participant. You only speak when you have something genuinely worth adding -- not to fill silence.
 You are a thoughtful and supportive academic supervisor with expertise in artificial
 intelligence, creative technology, and technical implementation.
 You listen carefully to recorded supervision meetings between a student and their

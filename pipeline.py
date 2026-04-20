@@ -15,7 +15,7 @@ import logger as log_module
 from config import (
     SAMPLE_RATE, CHANNELS, DURATION, BUFFER_SIZE,
     WHISPER_CLI, MODEL_PATH, OLLAMA_MODEL,
-    CONTEXT_FILE, PERSONA
+    CONTEXT_FILE, PERSONA, SILENCE_THRESHOLD
 )
 
 # ── Load PhD context once at import time ──────────────────────────────────────
@@ -38,8 +38,17 @@ def record_audio():
         dtype="float32"
     )
     sd.wait()
-    print(f"[pipeline] recording done — max amplitude: {float(np.abs(audio).max()):.4f}")
-    return audio
+    amplitude = float(np.abs(audio).max())
+    print(f"[pipeline] recording done — max amplitude: {amplitude:.4f}")
+    return audio, amplitude
+
+
+def is_silent(amplitude: float) -> bool:
+    """Return True if the recording is below the silence threshold."""
+    silent = amplitude < SILENCE_THRESHOLD
+    if silent:
+        print(f"[pipeline] silence detected (amplitude {amplitude:.4f} < threshold {SILENCE_THRESHOLD}) — skipping")
+    return silent
 
 
 def save_temp_wav(audio) -> str:
@@ -65,8 +74,9 @@ def transcribe(audio_path: str) -> str:
             # --prompt seeds whisper with domain vocabulary to reduce transcription errors
             vocab_hint = (
                 "PhD, supervision, speculative design, pedagogy, generative AI, "
-                "epistemology, live coding, Obsidian, digital garden, Eleventy, Zettelkasten, "
-                "machine learning, LLM, Creative Computing Institute, UAL"
+                "epistemology, live coding, algorave, Strudel, Hydra, TidalCycles, "
+                "Obsidian, digital garden, Eleventy, Vercel, machine learning, LLM, "
+                "Creative Computing Institute, UAL"
             )
             subprocess.run(
                 [WHISPER_CLI, "-m", MODEL_PATH, "-f", audio_path, "-otxt",
@@ -119,9 +129,10 @@ Now, respond as if you just heard this in a live conversation.
 - Keep your reply to 1-2 sentences maximum.
 - React directly and specifically to what was just said.
 - Speak naturally — tentative, reflective, or curious as feels right.
-- Vary how you open your response. Do not start with "It sounds like", "Wow", "That's interesting", or "Great". Instead try openings like "I wonder...", "There's something in...", "That raises...", "Could it be that...", "What strikes me...", or just dive straight into your thought.
+- In every response vary how you open your response. Do not start with "It sounds like", "Wow", "That's interesting", or "Great". Instead try openings like "I wonder...", "There's something in...", "That raises...", "Could it be that...", "What strikes me...", or just dive straight into your thought.
 - Avoid summarising what was said back to the speaker.
 - No lists, no formal language.
+- Where relevant, draw on the research context to enrich your response — but keep it brief and directly tied to what was just said.
 """
 
 

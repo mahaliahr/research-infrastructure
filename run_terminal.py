@@ -49,7 +49,7 @@ def main():
 
     try:
         while True:
-            audio    = pipeline.record_audio()
+            audio, amplitude = pipeline.record_audio()
             wav_path = pipeline.save_temp_wav(audio)
             transcript = pipeline.transcribe(wav_path)
             pipeline.cleanup_wav(wav_path)
