@@ -10,19 +10,16 @@ BUFFER_SIZE  = 4       # snippets before bot responds
 # Override these via environment variables or edit directly.
 WHISPER_CLI = os.environ.get(
     "WHISPER_CLI",
-    "/Users/mhenryrichards/Library/CloudStorage/"
-    "OneDrive-UniversityoftheArtsLondon/PhD Onedrive/"
-    "Supervisor-Bot/whisper.cpp/build/bin/whisper-cli"
+    "/Users/mhenryrichards/Documents/GitHub/supervisor-bot/whisper.cpp/build/bin/whisper-cli"
+    
 )
 MODEL_PATH = os.environ.get(
     "WHISPER_MODEL",
-    "/Users/mhenryrichards/Library/CloudStorage/"
-    "OneDrive-UniversityoftheArtsLondon/PhD Onedrive/"
-    "Supervisor-Bot/whisper.cpp/models/ggml-base.en.bin"
+    "/Users/mhenryrichards/Documents/GitHub/supervisor-bot/whisper.cpp/models/ggml-small.en.bin"
 )
 
 # ── LLM ────────────────────────────────────────────────────────────────────────
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "zephyr:7b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3:8b")
 
 # ── Context ────────────────────────────────────────────────────────────────────
 CONTEXT_FILE = "context/phd-context.txt"

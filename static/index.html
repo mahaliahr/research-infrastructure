@@ -8,317 +8,469 @@
 <link href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300..700&display=swap" rel="stylesheet"" rel="stylesheet">
 <style>
   :root {
-    --bg:       #fafaf8;
-    --text:     #1a1a1a;
-    --dim:      #999;
-    --faint:    #ccc;
-    --border:   #ddddd8;
-    --accent:   #6b5ce7;
+    --bg:        #ffffff;
+    --text:      #1a1a1a;
+    --dim:       #999;
+    --faint:     #ccc;
+    --border:    #dae6ff;
+    --accent:    #6b5ce7;
+    --accent-bg: #f0eeff;
     --mono: 'Overpass Mono', 'Courier New', monospace;
     --body: 'Overpass Mono', 'Courier New', monospace;
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+ 
   body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--body);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.6;
     display: flex;
     flex-direction: column;
-    align-items: center;
   }
-
-  /* ── Header ── */
-  header {
-    width: 100%;
-    max-width: 560px;
-    padding: 32px 24px 0;
+ 
+  /* ── Two-column layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    flex: 1;
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+  }
+ 
+  /* ── Top bar ── */
+  .topbar {
+    padding: 16px 24px 0;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    flex-shrink: 0;
   }
-
   .wordmark {
     font-family: var(--mono);
     font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.02em;
     color: var(--text);
   }
-  .wordmark em {
-    font-style: normal;
-    color: var(--accent);
-    font-weight: 400;
+  .wordmark em { font-style: normal; color: var(--accent); font-weight: 400; }
+ 
+  /* ── Left column ── */
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
   }
-
-  /* ── Begin button ── */
-  .btn-begin {
+ 
+  /* Bio block */
+  .bio-block {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .bio-label {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 6px;
+  }
+  .bio-text {
+    font-family: var(--body);
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.5;
+    font-style: italic;
+  }
+ 
+  /* Controls */
+  .controls {
+    padding: 12px 24px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+ 
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 6px 18px;
-    border: 2px solid var(--text);
-    border-radius: 2px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.12s;
+  }
+  .btn:disabled { opacity: 0.25; cursor: not-allowed; }
+ 
+  .btn-start {
+    border-color: var(--text);
     background: transparent;
     color: var(--text);
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s;
-    flex-shrink: 0;
   }
-  .btn-begin:hover:not(:disabled) {
-    background: var(--text);
-    color: var(--bg);
-  }
-  .btn-begin.active {
-    border-color: var(--faint);
-    color: var(--dim);
-  }
-  .btn-begin:disabled { opacity: 0.3; cursor: not-allowed; }
-
+  .btn-start:hover:not(:disabled) { background: var(--text); color: var(--bg); }
+ 
   .btn-stop {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
+    border-color: var(--border);
     background: transparent;
     color: var(--dim);
-    cursor: pointer;
-    transition: color 0.12s, border-color 0.12s;
   }
-  .btn-stop:hover:not(:disabled) { color: var(--text); border-color: var(--dim); }
-  .btn-stop:disabled { opacity: 0.2; cursor: not-allowed; }
-
-  /* ── Feed ── */
-  .feed {
-    width: 100%;
-    max-width: 560px;
-    padding: 28px 24px 80px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+  .btn-stop:hover:not(:disabled) { border-color: var(--dim); color: var(--text); }
+ 
+  /* ── Main feed — fixed height, scrolls internally ── */
+  .feed-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px 32px;
   }
-
-  /* ── Listening state ── */
-  .listening {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--dim);
-    padding: 14px 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    animation: fadeIn 0.3s ease;
-  }
-  .listening-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.4s ease-in-out infinite;
-    flex-shrink: 0;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-  /* ── Transcript block ── */
+  .feed-wrap::-webkit-scrollbar { width: 3px; }
+  .feed-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+ 
+  /* ── Feed elements ── */
   .transcript {
     border: 1.5px solid var(--border);
     border-left: 3px solid var(--border);
     border-radius: 2px;
-    padding: 12px 16px;
+    padding: 10px 14px;
     font-family: var(--body);
-    font-size: 15px;
+    font-size: 14px;
     color: var(--text);
-    margin: 8px 0;
-    animation: fadeIn 0.25s ease;
+    margin: 6px 0;
+    animation: fadeIn 0.2s ease;
     line-height: 1.55;
   }
-
-  /* ── Bot bubble ── */
-  /* Speech bubble pointing bottom-left, matching sketch */
+ 
   .bot-bubble-wrap {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    margin: 12px 0 4px;
-    animation: fadeIn 0.25s ease;
+    margin: 10px 0 4px;
+    animation: fadeIn 0.2s ease;
   }
-
   .bot-label {
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 6px;
-    padding-left: 2px;
+    margin-bottom: 5px;
   }
-
   .bot-bubble {
-    position: relative;
-    background: #f0eeff;
+    background: var(--accent-bg);
     border: 1.5px solid var(--accent);
     border-radius: 16px 16px 16px 4px;
-    padding: 12px 18px;
+    padding: 10px 16px;
     font-family: var(--body);
     font-style: italic;
-    font-size: 15px;
+    font-size: 14px;
     color: #3d3080;
-    max-width: 90%;
+    max-width: 88%;
     line-height: 1.55;
   }
-
-  /* cursor while streaming */
   .bot-bubble.streaming::after {
     content: '|';
     color: var(--accent);
     animation: blink 0.9s step-end infinite;
     font-style: normal;
   }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  /* ── Thinking state ── */
-  .thinking {
+ 
+  /* Session summary block */
+  .summary-block {
+    margin: 16px 0 8px;
+    border: 1.5px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: 2px;
+    padding: 14px 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .summary-label {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--accent);
-    padding: 10px 0 6px;
-    animation: fadeIn 0.2s ease;
+    margin-bottom: 8px;
+  }
+  .summary-text {
+    font-family: var(--body);
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+ 
+  /* Status line */
+  .status-line {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
+    padding: 5px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    animation: fadeIn 0.2s ease;
   }
-
-  /* ── Divider between sessions ── */
+  .status-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--faint);
+    flex-shrink: 0;
+  }
+  .status-dot.recording   { background: #e05; animation: pulse 1.2s ease-in-out infinite; }
+  .status-dot.thinking    { background: var(--accent); animation: pulse 0.7s ease-in-out infinite; }
+  .status-dot.transcribing{ background: var(--dim); animation: pulse 0.5s ease-in-out infinite; }
+ 
+  /* Session markers */
   .session-marker {
     font-family: var(--mono);
     font-size: 10px;
     color: var(--faint);
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 20px 0 8px;
+    padding: 16px 0 6px;
     border-top: 1px solid var(--border);
-    margin-top: 16px;
+    margin-top: 6px;
   }
-
-  /* ── Empty / idle state ── */
+  .session-marker:first-child { border-top: none; padding-top: 0; }
+ 
   .idle-hint {
     font-family: var(--mono);
     font-size: 12px;
     color: var(--faint);
-    padding: 32px 0 0;
+    padding: 24px 0 0;
   }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── Controls row ── */
-  .controls {
-    width: 100%;
-    max-width: 560px;
-    padding: 16px 24px 0;
+ 
+  /* ── Right column ── */
+  .right-col {
     display: flex;
-    gap: 8px;
-    align-items: center;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
   }
+ 
+  .panel {
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel:last-child { border-bottom: none; flex: 1; }
+ 
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .panel-header:hover { background: rgba(0,0,0,0.02); }
+ 
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .panel-arrow {
+    font-size: 9px;
+    color: var(--faint);
+    transition: transform 0.2s;
+  }
+  .panel-arrow.open { transform: rotate(180deg); }
+ 
+  .panel-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .panel-body::-webkit-scrollbar { width: 3px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); }
+  .panel-body.collapsed { display: none; }
+ 
+  /* Conversation history list */
+  .history-list { list-style: none; }
+  .history-item {
+    border-bottom: 1px solid var(--border);
+  }
+  .history-btn {
+    display: block; width: 100%;
+    background: none; border: none;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .history-btn:hover { color: var(--accent); }
+ 
+  /* Debug log */
+  .debug-log {
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+  .debug-entry { margin-bottom: 1px; }
+  .debug-entry.error { color: #c0392b; }
+  .debug-entry.ok    { color: #5cb85c; }
+  .debug-entry.think { color: var(--accent); }
+ 
+  @keyframes fadeIn  { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes blink   { 50%{opacity:0} }
+  @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.15} }
 </style>
 </head>
 <body>
  
-<header>
+<div class="topbar">
   <div class="wordmark">Supervisor-Bot <em>·</em> <em>v1.5</em></div>
-  <button class="btn-begin" id="btn-begin" onclick="startSession()">Begin</button>
-</header>
- 
-<div class="controls">
-  <button class="btn-stop" id="btn-stop" onclick="stopSession()" disabled>Stop session</button>
 </div>
  
-<!-- Always-visible state banner -->
-<div class="state-banner" id="state-banner">
-  <div class="state-inner">
-    <div class="state-dot" id="state-dot"></div>
-    <div class="state-label" id="state-label">Starting…</div>
-    <div class="state-sub" id="state-sub"></div>
+<div class="layout">
+ 
+  <!-- ── Left column ── -->
+  <div class="left-col">
+ 
+    <div class="bio-block">
+      <div class="bio-label">About</div>
+      <div class="bio-text">
+        I am an LLM-based research tool that listens to supervision meetings and occasionally has something to say about them.
+        I have been prompted to respond as a technically-informed academic supervisor — curious, reflective, and brief.
+        My responses are grounded in a shared research context document.
+        I process and transcribe locally, think slowly, and have no memory of last time.
+      </div>
+    </div>
+ 
+    <div class="controls">
+      <button class="btn btn-start" id="btn-start" onclick="startSession()">Start</button>
+      <button class="btn btn-stop"  id="btn-stop"  onclick="stopSession()" disabled>Stop</button>
+    </div>
+ 
+    <div class="feed-wrap" id="feed">
+      <div class="idle-hint">Press Start to begin recording.</div>
+    </div>
+ 
   </div>
-  <div class="buffer-track" id="buffer-track"></div>
-</div>
  
-<div class="feed" id="feed">
-  <div class="idle-hint">Press Begin to start recording.</div>
+  <!-- ── Right column ── -->
+  <div class="right-col">
+ 
+    <!-- Conversation history -->
+    <div class="panel" style="flex:0 0 auto; max-height: 50%;">
+      <div class="panel-header" onclick="togglePanel('history')">
+        <span class="panel-title">Conversation history</span>
+        <span class="panel-arrow" id="arrow-history">▼</span>
+      </div>
+      <div class="panel-body" id="body-history">
+        <ul class="history-list" id="history-list">
+          <li style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--faint)">loading…</li>
+        </ul>
+      </div>
+    </div>
+ 
+    <!-- Debug log -->
+    <div class="panel">
+      <div class="panel-header" onclick="togglePanel('debug')">
+        <span class="panel-title">Debug log</span>
+        <span class="panel-arrow open" id="arrow-debug">▼</span>
+      </div>
+      <div class="panel-body" id="body-debug">
+        <div class="debug-log" id="debug-log">
+          <div class="debug-entry" style="color:var(--faint)">waiting for session…</div>
+        </div>
+      </div>
+    </div>
+ 
+  </div>
 </div>
  
 <script>
   let sse = null;
   let botBubble = null;
-  let bufCount = 0;
-  const BUF_MAX = 4;
+  let statusLine = null;
  
-  const feed        = document.getElementById('feed');
-  const btnBegin    = document.getElementById('btn-begin');
-  const btnStop     = document.getElementById('btn-stop');
-  const banner      = document.getElementById('state-banner');
-  const stateDot    = document.getElementById('state-dot');
-  const stateLabel  = document.getElementById('state-label');
-  const stateSub    = document.getElementById('state-sub');
-  const bufferTrack = document.getElementById('buffer-track');
+  const feed      = document.getElementById('feed');
+  const btnStart  = document.getElementById('btn-start');
+  const btnStop   = document.getElementById('btn-stop');
+  const debugLog  = document.getElementById('debug-log');
  
-  // ── State banner ─────────────────────────────────────────────────────────────
- 
-  function setState(mode, label, sub) {
-    banner.classList.add('visible');
-    stateDot.className = `state-dot ${mode}`;
-    stateLabel.textContent = label;
-    stateSub.textContent = sub || '';
+  // ── Panel toggle ─────────────────────────────────────────────────────────────
+  function togglePanel(id) {
+    const body  = document.getElementById(`body-${id}`);
+    const arrow = document.getElementById(`arrow-${id}`);
+    body.classList.toggle('collapsed');
+    arrow.classList.toggle('open');
   }
  
-  function hideBanner() {
-    banner.classList.remove('visible');
-  }
+  // ── Debug log ─────────────────────────────────────────────────────────────────
+  function debug(text, cls) {
+    // Clear placeholder
+    const placeholder = debugLog.querySelector('[style*="color:var(--faint)"]');
+    if (placeholder) placeholder.remove();
  
-  function renderBuffer() {
-    bufferTrack.innerHTML = '';
-    for (let i = 0; i < BUF_MAX; i++) {
-      const pip = document.createElement('div');
-      pip.className = 'buffer-pip' + (i < bufCount ? ' filled' : '');
-      bufferTrack.appendChild(pip);
+    const el = document.createElement('div');
+    el.className = 'debug-entry' + (cls ? ` ${cls}` : '');
+    el.textContent = text;
+    debugLog.appendChild(el);
+    debugLog.parentElement.scrollTop = debugLog.parentElement.scrollHeight;
+ 
+    // Keep log from growing indefinitely
+    while (debugLog.children.length > 200) {
+      debugLog.removeChild(debugLog.firstChild);
     }
   }
  
-  // ── Feed helpers ─────────────────────────────────────────────────────────────
+  // ── Status line (inline in feed) ─────────────────────────────────────────────
+  function setStatus(dotClass, text) {
+    if (!statusLine || !statusLine.isConnected) {
+      statusLine = document.createElement('div');
+      statusLine.className = 'status-line';
+      feed.appendChild(statusLine);
+    }
+    statusLine.innerHTML = `<div class="status-dot ${dotClass}"></div>${text}`;
+    feed.scrollTop = feed.scrollHeight;
+  }
  
+  function removeStatus() {
+    if (statusLine && statusLine.isConnected) statusLine.remove();
+    statusLine = null;
+  }
+ 
+  // ── Feed helpers ─────────────────────────────────────────────────────────────
   function clearIdle() {
     const hint = feed.querySelector('.idle-hint');
     if (hint) hint.remove();
   }
  
-  function scrollDown() {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  }
- 
   function esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
  
   function addTranscript(text) {
+    removeStatus();
     const el = document.createElement('div');
     el.className = 'transcript';
     el.textContent = text;
     feed.appendChild(el);
-    scrollDown();
+    feed.scrollTop = feed.scrollHeight;
   }
  
   function startBotBubble() {
+    removeStatus();
     const wrap = document.createElement('div');
     wrap.className = 'bot-bubble-wrap';
     const label = document.createElement('div');
@@ -330,92 +482,102 @@
     wrap.appendChild(bubble);
     feed.appendChild(wrap);
     botBubble = bubble;
-    scrollDown();
+    feed.scrollTop = feed.scrollHeight;
   }
  
   function appendBotToken(token) {
     if (botBubble) {
       botBubble.textContent += token;
-      scrollDown();
+      feed.scrollTop = feed.scrollHeight;
     }
   }
  
   function finishBotBubble() {
-    if (botBubble) {
-      botBubble.classList.remove('streaming');
-      botBubble = null;
-    }
+    if (botBubble) { botBubble.classList.remove('streaming'); botBubble = null; }
+  }
+ 
+  function addSummary(text) {
+    removeStatus();
+    const block = document.createElement('div');
+    block.className = 'summary-block';
+    const label = document.createElement('div');
+    label.className = 'summary-label';
+    label.textContent = 'session summary';
+    const content = document.createElement('div');
+    content.className = 'summary-text';
+    content.textContent = text;
+    block.appendChild(label);
+    block.appendChild(content);
+    feed.appendChild(block);
+    feed.scrollTop = feed.scrollHeight;
   }
  
   function setActive(val) {
-    btnBegin.disabled = val;
+    btnStart.disabled = val;
     btnStop.disabled  = !val;
   }
  
   // ── SSE ──────────────────────────────────────────────────────────────────────
- 
   function connectSSE() {
     if (sse) sse.close();
     sse = new EventSource('/stream');
     sse.onmessage = e => handle(JSON.parse(e.data));
+    sse.onerror   = () => debug('SSE connection error', 'error');
   }
  
   function handle(ev) {
+    // Always log to debug panel
+    debug(`[${ev.event}] ${ev.message || ev.text || ev.reply || ev.token || ''}`.slice(0, 120));
+ 
     switch (ev.event) {
  
       case 'session_start':
         clearIdle();
-        const marker = document.createElement('div');
-        marker.className = 'session-marker';
-        marker.textContent = 'session started';
-        feed.appendChild(marker);
-        bufCount = 0;
-        renderBuffer();
-        setState('recording', 'Recording…', `snippet 1 of ${BUF_MAX}`);
+        const m = document.createElement('div');
+        m.className = 'session-marker';
+        m.textContent = 'session started';
+        feed.appendChild(m);
         setActive(true);
+        setStatus('recording', 'listening…');
+        debug('session started', 'ok');
         break;
  
       case 'session_end':
         finishBotBubble();
-        const endMarker = document.createElement('div');
-        endMarker.className = 'session-marker';
-        endMarker.textContent = 'session ended';
-        feed.appendChild(endMarker);
-        hideBanner();
+        removeStatus();
+        const em = document.createElement('div');
+        em.className = 'session-marker';
+        em.textContent = 'session ended';
+        feed.appendChild(em);
         setActive(false);
+        loadHistory();
+        debug('session ended', 'ok');
         break;
  
-      case 'status':
-        // Map server status messages to banner states
-        const msg = (ev.message || '').toLowerCase();
-        if (msg.includes('recording')) {
-          // Extract snippet number if present
-          const match = ev.message.match(/(\d+)\/(\d+)/);
-          const sub = match ? `snippet ${match[1]} of ${match[2]}` : '';
-          setState('recording', 'Recording…', sub);
-        } else if (msg.includes('transcrib')) {
-          setState('transcribing', 'Transcribing snippet…', 'whisper.cpp');
-        } else if (msg.includes('deciding')) {
-          setState('thinking', 'Thinking about whether to respond…', 'ollama');
-        } else if (msg.includes('thinking') || msg.includes('bot')) {
-          setState('thinking', 'Supervisor-Bot is thinking…', 'ollama');
-        } else if (msg.includes('chose not')) {
-          setState('recording', 'Listening…', 'continuing');
-        }
+      case 'session_summary':
+        if (ev.summary) addSummary(ev.summary);
+        debug('session summary received', 'ok');
         break;
+ 
+      case 'status': {
+        const msg = (ev.message || '').toLowerCase();
+        if (msg.includes('recording'))       setStatus('recording',    'listening…');
+        else if (msg.includes('transcrib'))  setStatus('transcribing', 'transcribing…');
+        else if (msg.includes('deciding'))   setStatus('thinking',     'thinking…');
+        else if (msg.includes('thinking') || msg.includes('bot is')) setStatus('thinking', 'thinking…');
+        else if (msg.includes('summary'))    setStatus('thinking',     'generating summary…');
+        else if (msg.includes('chose not'))  setStatus('recording',    'listening…');
+        debug(ev.message || '', 'think');
+        break;
+      }
  
       case 'transcript':
-        bufCount = Math.min(bufCount + 1, BUF_MAX);
-        renderBuffer();
         addTranscript(ev.text);
-        // Show recording state again while buffering
-        if (bufCount < BUF_MAX) {
-          setState('recording', 'Recording…', `snippet ${bufCount + 1} of ${BUF_MAX}`);
-        }
+        setStatus('recording', 'listening…');
         break;
  
       case 'bot_start':
-        setState('thinking', 'Supervisor-Bot is responding…', 'ollama');
+        setStatus('thinking', 'thinking…');
         setTimeout(startBotBubble, 300);
         break;
  
@@ -425,33 +587,99 @@
  
       case 'bot_end':
         finishBotBubble();
-        bufCount = 0;
-        renderBuffer();
-        setState('recording', 'Recording…', `snippet 1 of ${BUF_MAX}`);
+        setStatus('recording', 'listening…');
         break;
  
       case 'error':
-        setState('idle', ev.message || 'An error occurred.', '');
+        removeStatus();
+        debug(ev.message || 'error', 'error');
         break;
     }
   }
  
   // ── Session control ──────────────────────────────────────────────────────────
- 
   async function startSession() {
     try {
       const r = await fetch('/session/start', { method: 'POST' });
       if (!r.ok) { alert((await r.json()).detail); return; }
       feed.innerHTML = '';
-      setState('idle', 'Starting session…', '');
       connectSSE();
+      debug('session starting…', 'ok');
     } catch(e) {
       alert('Could not reach server: ' + e.message);
     }
   }
  
   async function stopSession() {
-    await fetch('/session/stop', { method: 'POST' }).catch(() => {});
+    await fetch('/session/stop', { method: 'POST' }).catch(()=>{});
+    debug('stop requested');
+  }
+ 
+  // ── History panel ─────────────────────────────────────────────────────────────
+  async function loadHistory() {
+    try {
+      const r = await fetch('/sessions');
+      const j = await r.json();
+      const ul = document.getElementById('history-list');
+      ul.innerHTML = '';
+      (j.sessions || []).forEach(id => {
+        const li  = document.createElement('li');
+        li.className = 'history-item';
+        const btn = document.createElement('button');
+        btn.className = 'history-btn';
+        btn.textContent = id;
+        btn.onclick = () => loadSessionReplay(id);
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+      if (!j.sessions?.length) {
+        ul.innerHTML = '<li style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--faint)">no sessions yet</li>';
+      }
+    } catch(e) {}
+  }
+ 
+  async function loadSessionReplay(id) {
+    try {
+      const r = await fetch(`/sessions/${id}`);
+      if (!r.ok) return;
+      const j = await r.json();
+ 
+      feed.innerHTML = '';
+      const marker = document.createElement('div');
+      marker.className = 'session-marker';
+      marker.innerHTML = `replay <span style="color:var(--accent)">${id}</span>`;
+      feed.appendChild(marker);
+ 
+      (j.events || []).forEach(ev => {
+        switch (ev.event) {
+          case 'transcript':
+            const t = document.createElement('div');
+            t.className = 'transcript';
+            t.textContent = ev.text || '';
+            feed.appendChild(t);
+            break;
+          case 'bot_end':
+            if (ev.reply) {
+              const wrap = document.createElement('div');
+              wrap.className = 'bot-bubble-wrap';
+              const label = document.createElement('div');
+              label.className = 'bot-label';
+              label.textContent = 'supervisor-bot';
+              const bubble = document.createElement('div');
+              bubble.className = 'bot-bubble';
+              bubble.textContent = ev.reply;
+              wrap.appendChild(label);
+              wrap.appendChild(bubble);
+              feed.appendChild(wrap);
+            }
+            break;
+          case 'session_summary':
+            if (ev.summary) addSummary(ev.summary);
+            break;
+        }
+      });
+      feed.scrollTop = 0;
+    } catch(e) {}
   }
  
   // ── Init ─────────────────────────────────────────────────────────────────────
@@ -461,6 +689,7 @@
       const j = await r.json();
       if (j.active) { setActive(true); connectSSE(); }
     } catch(e) {}
+    loadHistory();
   })();
 </script>
 </body>

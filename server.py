@@ -13,7 +13,7 @@ GET  /sessions            → list past sessions
 GET  /sessions/{id}       → replay events for a past session
 
 Run with:
-    uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+    python3 -m uvicorn server:app --host 0.0.0.0 --port 8000
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from typing import AsyncGenerator
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import logger as log_module
@@ -44,16 +44,16 @@ STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-# ── Session state (simple in-process singleton) ────────────────────────────────
+# ── Session state ──────────────────────────────────────────────────────────────
 
 class SessionState:
     def __init__(self):
-        self.active      = False
-        self.text_log    = None
-        self.json_log    = None
-        self.session_id  = None
-        self._stop_event = threading.Event()
-        self._thread     = None
+        self.active               = False
+        self.text_log             = None
+        self.json_log             = None
+        self.session_id           = None
+        self._stop_event          = threading.Event()
+        self._thread              = None
         self._event_queue: queue.Queue = queue.Queue()
 
     def _emit(self, event_type: str, data: dict):
@@ -70,11 +70,16 @@ class SessionState:
         if self.text_log:
             speaker = "person" if event_type == "transcript" else "bot"
             text    = data.get("text", data.get("token", data.get("reply", "")))
-            log_module.log_text(self.text_log, speaker, text)
+            if text:
+                log_module.log_text(self.text_log, speaker, text)
 
     def _run_loop(self):
         """Background thread: record → transcribe → LLM, buffered."""
-        snippet_buffer = []
+        snippet_buffer      = []
+        all_transcripts     = []   # accumulates full session for end summary
+        bot_responses       = []   # accumulates bot replies for end summary
+        conversation_so_far = ""   # rolling summary passed as context to LLM
+
         self._emit("session_start", {"message": "Session started"})
 
         while not self._stop_event.is_set():
@@ -90,28 +95,55 @@ class SessionState:
 
             if transcript and not transcript.startswith("["):
                 snippet_buffer.append(transcript)
+                all_transcripts.append(transcript)
                 self._emit("transcript", {"text": transcript})
 
             # Respond when buffer is full
             if len(snippet_buffer) >= BUFFER_SIZE:
                 joined = " ".join(snippet_buffer)
 
-                # Ask the LLM whether this is a good moment to interject
+                # Decide whether to interject
                 self._emit("status", {"message": "Deciding whether to interject…"})
                 if pipeline.should_interject(joined):
                     self._emit("status", {"message": "Bot is thinking…"})
                     bot_reply = ""
                     self._emit("bot_start", {})
-                    for token in pipeline.query_ollama_stream(joined):
+
+                    for token in pipeline.query_ollama_stream(joined, conversation_so_far):
                         bot_reply += token
                         self._emit("bot_token", {"token": token})
+
                     self._emit("bot_end", {"reply": bot_reply})
+                    bot_responses.append(bot_reply)
                     pipeline.log_summary_async(joined, self.text_log, self.json_log)
                 else:
                     self._emit("status", {"message": "Listening… (bot chose not to interject)"})
                     print("[server] bot decided not to interject, continuing to listen")
 
+                # Update rolling summary synchronously so context is ready for next buffer
+                conversation_so_far = pipeline.update_rolling_summary(conversation_so_far, joined)
+                print(f"[server] rolling summary updated ({len(conversation_so_far)} chars)")
+
                 snippet_buffer = []
+
+        # ── Session ended — generate end-of-session summary ───────────────────
+        if all_transcripts:
+            self._emit("status", {"message": "Generating session summary…"})
+            full_transcript = " ".join(all_transcripts)
+            try:
+                import ollama as _ollama
+                prompt  = pipeline.build_session_summary_prompt(full_transcript, bot_responses)
+                resp    = _ollama.chat(
+                    model=pipeline.OLLAMA_MODEL,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                summary = resp["message"]["content"].strip()
+                log_module.log_json(self.json_log, "session_summary", {"summary": summary})
+                log_module.log_text(self.text_log, "session_summary", summary)
+                self._emit("session_summary", {"summary": summary})
+                print("[server] session summary generated")
+            except Exception as e:
+                print(f"[server] session summary failed: {e}")
 
         self._emit("session_end", {"message": "Session ended"})
 
@@ -171,21 +203,16 @@ def session_status():
 
 @app.get("/stream")
 async def event_stream():
-    """
-    Server-Sent Events endpoint.
-    The UI connects here and receives all session events in real time.
-    """
+    """Server-Sent Events endpoint — streams all session events to the UI."""
     async def generator() -> AsyncGenerator[str, None]:
         loop = asyncio.get_event_loop()
         while True:
             try:
-                # Non-blocking poll of the queue; yield control between checks
                 event = await loop.run_in_executor(
                     None, lambda: session._event_queue.get(timeout=0.2)
                 )
                 yield f"data: {json.dumps(event)}\n\n"
             except queue.Empty:
-                # Send a keepalive comment
                 yield ": keepalive\n\n"
             except Exception:
                 break
