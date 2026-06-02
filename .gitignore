@@ -1,7 +1,39 @@
+# macOS
 .DS_Store
-/whisper.cpp
-/logs
-/context
-/audio-test-files
-/script-test-files
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Node / Vite
+node_modules/
+dist/
+build/
+.vite/
+.npm/
+
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project-specific generated data
+shared-knowledge-layer/chroma_db/
