@@ -1,54 +1,99 @@
-# Supervisor-Bot v1
+# Supervisor-Bot
 
-An experimental LLM co-supervision tool for academic meetings. Records, transcribes locally using whisper.cpp, and generates reflective responses via Ollama.
+An experimental LLM co-supervision tool, built as part of my practice-based PhD at the Creative Computing Institute, UAL.
+
+The bot listens to supervision meetings in short audio snippets, transcribes them locally using whisper.cpp, and interjects with brief reflective responses via a locally-running LLM (Ollama). Everything runs on-device — no audio or transcripts leave the machine.
+
+This is a research prototype, not a finished tool. It is designed to probe how a bespoke LLM tool might participate in academic supervision, and what it does to the dynamics of the conversation.
+
+---
+
+## How it works
+
+1. Records audio in short snippets (default: 5 seconds)
+2. Transcribes each snippet locally with whisper.cpp
+3. Buffers several snippets (default: 4), then prompts the LLM
+4. Streams a short response into the browser interface
+5. Logs the full session as plain text and structured JSONL
+
+---
 
 ## Setup
 
 **Dependencies**
 
 ```bash
-pip install sounddevice soundfile numpy ollama
+pip install -r requirements.txt
 ```
 
-**Requirements**
-- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) built and model downloaded
-- [Ollama](https://ollama.com) running with a model (e.g., `ollama pull zephyr:7b`)
+You will also need:
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) built locally
+- [Ollama](https://ollama.com) running with your chosen model pulled
 
 **Configuration**
 
-Edit paths in `main.py`:
-- `WHISPER_CLI` — path to whisper-cli binary
-- `MODEL_PATH` — path to whisper model (.bin file)
-- `OLLAMA_MODEL` — ollama model name
-
-Create `context/phd-context.txt` with background about your research.
-
-## Run
+Edit `config.py` to set your paths, or use environment variables:
 
 ```bash
-python main.py
+export WHISPER_CLI=/path/to/whisper-cli
+export WHISPER_MODEL=/path/to/ggml-base.en.bin
+export OLLAMA_MODEL=zephyr:7b
 ```
 
-Records 5-second snippets continuously. After 4 snippets (20 seconds), generates a brief response.
+**Context file**
 
-Press `Ctrl+C` to stop.
+Create `context/phd-context.txt` with background on your research — this is loaded into every prompt to ground the bot's responses.
 
-## Logs
+---
 
-Session logs saved to `logs/`:
-- `.txt` — plain text conversation
-- `.jsonl` — structured JSON events
-- `whisper_debug.log` — whisper.cpp diagnostics
+## Running
 
-## Files
+```bash
+uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+Open `http://localhost:8000`. Press **Begin** to start a session.
+
+A terminal fallback is also available:
+
+```bash
+python run_terminal.py
+```
+
+---
+
+## File structure
 
 ```
-main.py              — core loop: record → transcribe → respond
-logger.py            — session logging
-context/phd-context.txt  — research background (create this)
-logs/                — generated at runtime
+├── config.py          — settings (paths, model, duration, buffer size)
+├── pipeline.py        — audio, transcription, and LLM logic
+├── server.py          — FastAPI backend + SSE event stream
+├── logger.py          — session logging
+├── run_terminal.py    — terminal-only fallback
+├── static/
+│   └── index.html     — browser UI
+├── context/
+│   └── phd-context.txt   — research background (create this)
+└── logs/              — generated at runtime
 ```
+
+---
+
+## v1 → v1.5
+
+The core processing logic is unchanged. v1.5 restructures the codebase and adds a browser interface:
+
+- `main.py` (single script) split into `pipeline.py`, `server.py`, `config.py`
+- All hardcoded paths moved to `config.py` / environment variables
+- FastAPI backend exposes the pipeline via HTTP endpoints
+- Browser UI replaces terminal output — single scrolling feed of transcripts and bot responses
+- Session logs now accessible via API (`GET /sessions`, `GET /sessions/{id}`)
+
+---
 
 ## Notes
 
-All processing happens locally — no data leaves your machine. This is a research prototype exploring AI participation in academic supervision.
+This is an evolving research instrument. Latency is noticeable (model warmup + transcription time). Turn-taking is approximate. These constraints are part of what the prototype is designed to surface.
+
+All participants should be aware the session is being recorded and transcribed.
+

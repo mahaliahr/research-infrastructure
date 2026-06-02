@@ -1,4 +1,4 @@
-# research-context-layer
+# shared-knowledge-layer
 
 Shared context layer for the PhD-Live AI bot ecosystem. Watches an Obsidian
 vault, embeds notes into a local vector store, and exposes a query API for
