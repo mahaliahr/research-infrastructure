@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>study companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f3ef;
+      --surface: #faf9f7;
+      --border: #d4cfc7;
+      --border-light: #e8e4de;
+      --text: #1a1816;
+      --text-secondary: #6b6560;
+      --text-muted: #9c9590;
+      --accent: #2d5a3d;
+      --accent-light: #e8f0eb;
+      --user-bg: #fff;
+      --assistant-bg: #f5f3ef;
+      --source-bg: #f0ede8;
+      --mono: 'IBM Plex Mono', monospace;
+      --serif: 'IBM Plex Serif', serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 100vh;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      background: var(--surface);
+    }
+
+    .sidebar-title {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .site-name {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .site-name em {
+      font-style: italic;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .status-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .dot.green { background: #4a9a5e; }
+    .dot.amber { background: #c9882a; }
+    .dot.pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .sidebar-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--text-secondary);
+      color: var(--text);
+    }
+
+    /* ── Main ── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Thread ── */
+    .thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      scroll-behavior: smooth;
+    }
+
+    .thread::-webkit-scrollbar { width: 4px; }
+    .thread::-webkit-scrollbar-track { background: transparent; }
+    .thread::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 480px;
+    }
+
+    .empty-state h2 {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-state p {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Messages ── */
+    .message {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+      animation: fadeIn 0.2s ease;
+    }
+
+    .message:last-child { border-bottom: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-meta {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .message-meta.companion { color: var(--accent); }
+
+    .message-body {
+      font-family: var(--serif);
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-body.user {
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* ── Sources ── */
+    .sources {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .source-tag {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      background: var(--source-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.2rem 0.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    .source-tag span {
+      color: var(--accent);
+      margin-right: 0.25rem;
+    }
+
+    /* ── Thinking indicator ── */
+    .thinking {
+      padding: 1.5rem 0;
+      display: none;
+    }
+
+    .thinking.visible { display: block; }
+
+    .thinking-meta {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .thinking-dots span {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: blink 1.4s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 3rem;
+      background: var(--surface);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      padding: 0.65rem 0.85rem;
+      resize: none;
+      min-height: 44px;
+      max-height: 180px;
+      outline: none;
+      transition: border-color 0.15s;
+      overflow-y: auto;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--text-muted); font-style: italic; }
+
+    .send-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      height: 44px;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .input-hint {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ── Vault warning ── */
+    .vault-warning {
+      background: #fff8ec;
+      border: 1px solid #e5c97a;
+      padding: 0.75rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: #7a5a1a;
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+
+    .vault-warning.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-title">after intelligence</div>
+      <div class="site-name">study companion<br><em>local · gemma3:12b</em></div>
+    </div>
+
+    <div class="status-block">
+      <div class="sidebar-title">status</div>
+      <div class="status-row">
+        <div class="dot" id="ollama-dot"></div>
+        <span id="ollama-label">checking model…</span>
+      </div>
+      <div class="status-row">
+        <div class="dot" id="vault-dot"></div>
+        <span id="vault-label">checking vault…</span>
+      </div>
+      <div class="status-row" id="chunks-row" style="display:none">
+        <div class="dot green"></div>
+        <span id="chunks-label"></span>
+      </div>
+      <div class="status-row">
+        <div class="dot" id="history-dot" style="background: var(--text-muted)"></div>
+        <span id="history-label">0 turns</span>
+      </div>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="btn-ghost" onclick="resetConversation()">clear conversation</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="thread" id="thread">
+      <div class="empty-state" id="empty-state">
+        <h2>what are you thinking about?</h2>
+        <p>vault context is retrieved automatically.<br>bring artefacts, half-formed questions, things that are worrying you.</p>
+      </div>
+      <div class="thinking" id="thinking">
+        <div class="thinking-meta">companion</div>
+        <div class="thinking-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="vault-warning" id="vault-warning">
+        vault not indexed — run <code>python ingest.py</code> to enable note context
+      </div>
+      <div class="input-row">
+        <textarea
+          id="input"
+          placeholder="what's on your mind…"
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">send</button>
+      </div>
+      <div class="input-hint">shift+enter for new line · enter to send</div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+  let turnCount = 0;
+  let streaming = false;
+
+  // ── Status check ──────────────────────────────────────────────────────────
+  async function checkStatus() {
+    try {
+      const res = await fetch('/status');
+      const data = await res.json();
+
+      const ollamaDot = document.getElementById('ollama-dot');
+      const ollamaLabel = document.getElementById('ollama-label');
+      const vaultDot = document.getElementById('vault-dot');
+      const vaultLabel = document.getElementById('vault-label');
+      const chunksRow = document.getElementById('chunks-row');
+      const chunksLabel = document.getElementById('chunks-label');
+      const vaultWarning = document.getElementById('vault-warning');
+
+      // we assume Ollama is running if the server is up
+      ollamaDot.classList.add('green');
+      ollamaLabel.textContent = 'gemma3:12b';
+
+      if (data.vault_indexed) {
+        vaultDot.classList.add('green');
+        vaultLabel.textContent = 'vault indexed';
+        chunksRow.style.display = 'flex';
+        chunksLabel.textContent = `${data.chunk_count.toLocaleString()} chunks`;
+        vaultWarning.classList.remove('visible');
+      } else {
+        vaultDot.style.background = '#c9882a';
+        vaultLabel.textContent = 'vault not indexed';
+        vaultWarning.classList.add('visible');
+      }
+    } catch (e) {
+      console.warn('status check failed', e);
+    }
+  }
+
+  function updateHistoryLabel() {
+    const dot = document.getElementById('history-dot');
+    const label = document.getElementById('history-label');
+    label.textContent = `${turnCount} turn${turnCount !== 1 ? 's' : ''}`;
+    if (turnCount > 0) dot.classList.add('green');
+  }
+
+  // ── Message rendering ─────────────────────────────────────────────────────
+  function appendUserMessage(text) {
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.remove();
+
+    const msg = document.createElement('div');
+    msg.className = 'message';
+    msg.innerHTML = `
+      <div class="message-meta">you</div>
+      <div class="message-body user">${escapeHtml(text)}</div>
+    `;
+    insertBeforeThinking(msg);
+  }
+
+  function appendAssistantMessage() {
+    const msg = document.createElement('div');
+    msg.className = 'message';
+    msg.innerHTML = `
+      <div class="message-meta companion">companion</div>
+      <div class="message-body response-body"></div>
+      <div class="sources response-sources"></div>
+    `;
+    insertBeforeThinking(msg);
+    return msg;
+  }
+
+  function insertBeforeThinking(el) {
+    const thinking = document.getElementById('thinking');
+    const thread = document.getElementById('thread');
+    thread.insertBefore(el, thinking);
+  }
+
+  function renderSources(sourcesEl, sources) {
+    if (!sourcesEl || !sources.length) return;
+    // filter to only show positively relevant chunks
+    const relevant = sources.filter(s => s.score > 0);
+    relevant.forEach(s => {
+      const tag = document.createElement('div');
+      tag.className = 'source-tag';
+      const pct = Math.round(s.score * 100);
+      tag.innerHTML = `<span>${pct}%</span>${escapeHtml(s.title)}`;
+      sourcesEl.appendChild(tag);
+    });
+  }
+
+  function renderMarkdown(text) {
+    // escape HTML first
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    // bold
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // italic
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // preserve line breaks
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function scrollToBottom() {
+    const thread = document.getElementById('thread');
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  // ── Send ──────────────────────────────────────────────────────────────────
+  async function sendMessage() {
+    if (streaming) return;
+
+    const input = document.getElementById('input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    autoResize(input);
+    setStreaming(true);
+
+    appendUserMessage(text);
+    scrollToBottom();
+
+    const thinking = document.getElementById('thinking');
+    thinking.classList.add('visible');
+    scrollToBottom();
+
+    let msgEl = null;
+    let responseEl = null;
+    let sourcesEl = null;
+    let fullText = '';
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+
+            if (event.type === 'token') {
+              if (!msgEl) {
+                thinking.classList.remove('visible');
+                msgEl = appendAssistantMessage();
+                responseEl = msgEl.querySelector('.response-body');
+                sourcesEl = msgEl.querySelector('.response-sources');
+                fullText = '';
+              }
+              fullText += event.content;
+              responseEl.innerHTML = renderMarkdown(fullText);
+              scrollToBottom();
+            }
+
+            if (event.type === 'sources') {
+              renderSources(sourcesEl, event.sources);
+            }
+
+            if (event.type === 'done') {
+              turnCount++;
+              updateHistoryLabel();
+            }
+          } catch (e) { /* skip malformed */ }
+        }
+      }
+    } catch (e) {
+      thinking.classList.remove('visible');
+      const err = document.createElement('div');
+      err.className = 'message';
+      err.innerHTML = `<div class="message-meta">error</div><div class="message-body" style="color:#c0392b">${escapeHtml(String(e))}</div>`;
+      insertBeforeThinking(err);
+    }
+
+    setStreaming(false);
+    scrollToBottom();
+  }
+
+  function setStreaming(val) {
+    streaming = val;
+    document.getElementById('send-btn').disabled = val;
+    document.getElementById('input').disabled = val;
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  async function resetConversation() {
+    if (streaming) return;
+    await fetch('/reset', { method: 'POST' });
+    const thread = document.getElementById('thread');
+    thread.innerHTML = `
+      <div class="empty-state" id="empty-state">
+        <h2>what are you thinking about?</h2>
+        <p>vault context is retrieved automatically.<br>bring artefacts, half-formed questions, things that are worrying you.</p>
+      </div>
+      <div class="thinking" id="thinking">
+        <div class="thinking-meta">companion</div>
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+      </div>
+    `;
+    turnCount = 0;
+    updateHistoryLabel();
+  }
+
+  // ── Textarea ──────────────────────────────────────────────────────────────
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  checkStatus();
+</script>
+</body>
+</html>
