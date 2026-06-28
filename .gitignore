@@ -38,7 +38,5 @@ env/
 # Project-specific generated data
 shared-knowledge-layer/chroma_db/
 
-# Mirror outputs — ignore generated files, preserve directories via .gitkeep
-mirror-outputs/daily/*.md
-mirror-outputs/weekly/*.md
+# Mirror outputs — commit markdown, ignore logs
 mirror-outputs/logs/*.log
