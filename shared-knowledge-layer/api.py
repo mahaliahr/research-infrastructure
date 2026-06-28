@@ -53,7 +53,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-VAULT_PATH = os.path.expanduser("~/Documents/GitHub/research-notes/src/site/notes")  
+VAULT_PATH = os.path.expanduser("~/Documents/GitHub/research-notes/src/site/notes")
+
+MIRROR_DAILY_DIR = Path(__file__).parent / "../mirror-outputs/daily"
+MIRROR_WEEKLY_DIR = Path(__file__).parent / "../mirror-outputs/weekly"
 
 def append_to_daily_note(session_id: int):
     conn = sqlite3.connect(DB_PATH)
@@ -195,3 +198,73 @@ def get_sessions(limit: int = 50):
     ).fetchall()
     conn.close()
     return {"sessions": [dict(r) for r in rows]}
+
+
+def _parse_mirror_sections(text: str) -> dict:
+    """Parse a mirror markdown file into sections dict."""
+    sections = {}
+    current_section = None
+    current_lines = []
+
+    # strip frontmatter
+    content = text
+    if text.startswith("---"):
+        end = text.find("---", 3)
+        if end != -1:
+            content = text[end + 3:].strip()
+
+    for line in content.splitlines():
+        if line.startswith("## "):
+            if current_section is not None:
+                sections[current_section] = "\n".join(current_lines).strip()
+            current_section = line[3:].strip().lower().replace(" ", "_")
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    if current_section is not None:
+        sections[current_section] = "\n".join(current_lines).strip()
+
+    return sections
+
+
+@app.get("/mirror/daily")
+def get_mirror_daily(limit: int = 7):
+    """Return the most recent N daily mirror files as parsed objects."""
+    try:
+        files = sorted(
+            MIRROR_DAILY_DIR.glob("*.md"),
+            reverse=True
+        )[:limit]
+        results = []
+        for f in files:
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            results.append({
+                "date": f.stem,
+                "raw": text,
+                "parsed": _parse_mirror_sections(text)
+            })
+        return {"files": results}
+    except Exception as e:
+        return {"files": [], "error": str(e)}
+
+
+@app.get("/mirror/weekly")
+def get_mirror_weekly(limit: int = 8):
+    """Return the most recent N weekly mirror files as parsed objects."""
+    try:
+        files = sorted(
+            MIRROR_WEEKLY_DIR.glob("*.md"),
+            reverse=True
+        )[:limit]
+        results = []
+        for f in files:
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            results.append({
+                "week": f.stem,
+                "raw": text,
+                "parsed": _parse_mirror_sections(text)
+            })
+        return {"files": results}
+    except Exception as e:
+        return {"files": [], "error": str(e)}

@@ -13,6 +13,8 @@ This monorepo contains the local tools, bots, and shared knowledge layer built a
 | `study-companion/` | Local LLM study support bot connected to the shared context layer |
 | `confidence-bot/` | Agentic public presence tool; monitors PhD-Live for new content and proposes shareable framings |
 | `learning-dashboard/` | Event-renderer based dashboard for visualising research activity and session state |
+| `mirror/` | Non-directive pattern-surfacing layer; daily cron scans the vault for notes, sessions, and orphans; weekly cron synthesises patterns via ChromaDB + Ollama and generates a prompt |
+| `mirror-outputs/` | Generated markdown outputs from the mirror layer (daily and weekly digests; logs) |
 
 ## running locally
 
