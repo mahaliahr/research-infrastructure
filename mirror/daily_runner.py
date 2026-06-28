@@ -25,10 +25,12 @@ def _relative_folder(path: Path) -> str:
 
 
 def _today_bounds():
-    today = date.today()
-    midnight = datetime.combine(today, datetime.min.time())
-    tomorrow = datetime.combine(today, datetime.max.time())
-    return midnight.timestamp(), tomorrow.timestamp(), today
+    now = datetime.now()
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_start_ts = day_start.timestamp()
+    day_end_ts = now.timestamp()
+    today = day_start.date()
+    return day_start_ts, day_end_ts, today
 
 
 # ---------------------------------------------------------------------------

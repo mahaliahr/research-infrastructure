@@ -1,3 +1,7 @@
 # daily_runner.py uses only the Python standard library.
 # sqlite3 is stdlib (no install needed).
-# No third-party packages required.
+
+# weekly_runner.py dependencies:
+chromadb
+ollama
+python-dotenv
